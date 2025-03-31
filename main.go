@@ -24,12 +24,13 @@ func PrintStars(matrix []string, ch chan int) {
 	for i := range matrix {
 		select {
 		case row := <-ch:
-			fmt.Printf("Горутина %d завершилась!\n", row)
+			matrix[row] = fmt.Sprintf("Горутина %d завершилась!\n", row)
 		default:
 			fmt.Println(matrix[i])
-			time.Sleep(150 * time.Millisecond)
 		}
 	}
+
+	time.Sleep(150 * time.Millisecond)
 }
 
 func main() {
@@ -54,6 +55,11 @@ func main() {
 	close(ch)
 
 	for row := range ch {
-		fmt.Printf("Горутина %d завершилась!\n", row)
+		matrix[row] = fmt.Sprintf("Горутина %d завершилась!\n", row)
+	}
+
+	fmt.Print("\033[H\033[2J")
+	for i := range matrix {
+		fmt.Println(matrix[i])
 	}
 }
