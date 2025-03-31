@@ -7,25 +7,27 @@ import (
 	"time"
 )
 
-func add_stars(matrix []string, row int, wg *sync.WaitGroup, counters []int) {
+func add_stars(matrix []string, row int, wg *sync.WaitGroup, ch chan int) {
 	defer wg.Done()
 
 	for i := 0; i < 30; i++ {
 		matrix[row] += "*"
-		counters[row]++
 		time.Sleep(time.Duration(rand.Intn(250-150+1)+150) * time.Millisecond)
 	}
+
+	ch <- row
 }
 
-func print_stars(matrix []string, counters []int, counter *int) {
+func print_stars(matrix []string, ch chan int) {
 	fmt.Print("\033[H\033[2J")
 
 	for i := range matrix {
-		fmt.Println(matrix[i])
-		if counters[i] == 30 {
-			matrix[i] = fmt.Sprintf("%d goroutine ended %d", i, *counter)
-			*counter++
-			counters[i]++
+		select {
+		case row := <-ch:
+			fmt.Printf("Горутина %d завершилась!\n", row)
+		default:
+			fmt.Println(matrix[i])
+			time.Sleep(150 * time.Millisecond)
 		}
 	}
 }
@@ -34,24 +36,24 @@ func main() {
 	rows := 5
 	var wg sync.WaitGroup
 	matrix := make([]string, rows)
-	counters := make([]int, rows)
-	counter := 1
+	ch := make(chan int, rows)
 
 	for i := 0; i < rows; i++ {
 		wg.Add(1)
 		matrix[i] = fmt.Sprintf("%d: ", i)
-		go add_stars(matrix, i, &wg, counters)
+		go add_stars(matrix, i, &wg, ch)
 	}
 
 	go func() {
 		for {
-			print_stars(matrix, counters, &counter)
-			time.Sleep(150 * time.Millisecond)
+			print_stars(matrix, ch)
 		}
 	}()
 
 	wg.Wait()
+	close(ch)
 
-	fmt.Print("\033[H\033[2J")
-	print_stars(matrix, counters, &counter)
+	for row := range ch {
+		fmt.Printf("Горутина %d завершилась!\n", row)
+	}
 }
