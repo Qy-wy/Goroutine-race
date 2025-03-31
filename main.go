@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func add_stars(matrix []string, row int, wg *sync.WaitGroup, ch chan int) {
+func AddStars(matrix []string, row int, wg *sync.WaitGroup, ch chan int) {
 	defer wg.Done()
 
 	for i := 0; i < 30; i++ {
@@ -18,7 +18,7 @@ func add_stars(matrix []string, row int, wg *sync.WaitGroup, ch chan int) {
 	ch <- row
 }
 
-func print_stars(matrix []string, ch chan int) {
+func PrintStars(matrix []string, ch chan int) {
 	fmt.Print("\033[H\033[2J")
 
 	for i := range matrix {
@@ -41,12 +41,12 @@ func main() {
 	for i := 0; i < rows; i++ {
 		wg.Add(1)
 		matrix[i] = fmt.Sprintf("%d: ", i)
-		go add_stars(matrix, i, &wg, ch)
+		go AddStars(matrix, i, &wg, ch)
 	}
 
 	go func() {
 		for {
-			print_stars(matrix, ch)
+			PrintStars(matrix, ch)
 		}
 	}()
 
