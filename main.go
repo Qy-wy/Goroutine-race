@@ -18,26 +18,30 @@ func AddStars(matrix []string, row int, wg *sync.WaitGroup, ch chan int) {
 	ch <- row
 }
 
-func PrintStars(matrix []string, ch chan int) {
+func SetPlace(matrix []string, ch chan int) {
+	for i := 0; i < len(matrix); i++ {
+		select {
+		case row := <-ch:
+			matrix[row] = fmt.Sprintf("Goroutine №%d ended on the %d place!", row, i+1)
+		}
+	}
+}
+
+func PrintStars(matrix []string) {
 	fmt.Print("\033[H\033[2J")
 
 	for i := range matrix {
-		select {
-		case row := <-ch:
-			matrix[row] = fmt.Sprintf("Горутина %d завершилась!\n", row)
-		default:
-			fmt.Println(matrix[i])
-		}
+		fmt.Println(matrix[i])
 	}
 
 	time.Sleep(150 * time.Millisecond)
 }
 
 func main() {
-	rows := 5
+	const rows = 5
 	var wg sync.WaitGroup
 	matrix := make([]string, rows)
-	ch := make(chan int, rows)
+	ch := make(chan int)
 
 	for i := 0; i < rows; i++ {
 		wg.Add(1)
@@ -46,20 +50,12 @@ func main() {
 	}
 
 	go func() {
+		go SetPlace(matrix, ch)
 		for {
-			PrintStars(matrix, ch)
+			PrintStars(matrix)
 		}
 	}()
 
 	wg.Wait()
-	close(ch)
-
-	for row := range ch {
-		matrix[row] = fmt.Sprintf("Горутина %d завершилась!\n", row)
-	}
-
-	fmt.Print("\033[H\033[2J")
-	for i := range matrix {
-		fmt.Println(matrix[i])
-	}
+	PrintStars(matrix)
 }
